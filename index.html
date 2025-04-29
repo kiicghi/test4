@@ -1,131 +1,128 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>TODO管理とタイマー</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 20px;
-    }
-    input {
-      padding: 8px;
-      width: 60%;
-    }
-    button {
-      margin: 4px;
-      padding: 8px 12px;
-    }
-    .task {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 5px 0;
-    }
-    .done {
-      text-decoration: line-through;
-    }
-    #timer {
-      font-size: 32px;
-      margin: 20px 0;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .task { display: flex; align-items: center; margin-bottom: 8px; }
+    .task input[type="checkbox"] { margin-right: 10px; }
+    .done { text-decoration: line-through; color: gray; }
+    .timer { font-size: 32px; margin-top: 20px; }
+    button { margin-right: 10px; }
   </style>
 </head>
 <body>
 
-  <h1>TODO管理</h1>
-  <input id="taskInput" type="text" placeholder="タスクを入力" />
-  <button onclick="addTask()">追加</button>
+<h1>TODO管理</h1>
 
-  <ul id="taskList"></ul>
+<!-- タスク入力フォーム -->
+<input type="text" id="taskInput" placeholder="タスクを入力">
+<button onclick="addTask()">追加</button>
 
-  <hr />
+<!-- タスクリスト -->
+<div id="taskList"></div>
 
-  <div>
-    <div id="timer">00:00</div>
-    <button onclick="startTimer(1500)">25分スタート</button>
-    <button onclick="startTimer(300)">5分休憩</button>
-    <button onclick="stopTimer()">ストップ</button>
-  </div>
+<hr>
 
-  <script>
-    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    const taskListEl = document.getElementById('taskList');
+<!-- タイマー表示 -->
+<div class="timer" id="timerDisplay">00:00</div>
+<button onclick="startTimer(1500)">25分スタート</button>
+<button onclick="startTimer(300)">5分休憩</button>
+<button onclick="stopTimer()">ストップ</button>
 
-    function saveTasks() {
-      localStorage.setItem('tasks', JSON.stringify(tasks));
-    }
+<script>
+  let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+  let timer = null;
+  let seconds = 0;
 
-    function renderTasks() {
-      taskListEl.innerHTML = '';
-      tasks.forEach((task, index) => {
-        const li = document.createElement('li');
-        li.className = 'task';
-        const text = document.createElement('span');
-        text.textContent = task.title;
-        if (task.isDone) text.classList.add('done');
-        text.onclick = () => toggleTask(index);
+  function saveTasks() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }
 
-        const delBtn = document.createElement('button');
-        delBtn.textContent = '削除';
-        delBtn.onclick = () => deleteTask(index);
+  function renderTasks() {
+    const taskList = document.getElementById('taskList');
+    taskList.innerHTML = '';
+    tasks.forEach((task, index) => {
+      const div = document.createElement('div');
+      div.className = 'task';
 
-        li.appendChild(text);
-        li.appendChild(delBtn);
-        taskListEl.appendChild(li);
-      });
-    }
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = task.isDone;
+      checkbox.onchange = () => toggleTask(index);
 
-    function addTask() {
-      const input = document.getElementById('taskInput');
-      const title = input.value.trim();
-      if (title) {
-        tasks.push({ title, isDone: false });
-        input.value = '';
-        saveTasks();
-        renderTasks();
-      }
-    }
+      const span = document.createElement('span');
+      span.textContent = task.title;
+      if (task.isDone) span.classList.add('done');
 
-    function toggleTask(index) {
-      tasks[index].isDone = !tasks[index].isDone;
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '削除';
+      deleteBtn.onclick = () => deleteTask(index);
+
+      div.appendChild(checkbox);
+      div.appendChild(span);
+      div.appendChild(deleteBtn);
+      taskList.appendChild(div);
+    });
+  }
+
+  function addTask() {
+    const input = document.getElementById('taskInput');
+    const title = input.value.trim();
+    if (title) {
+      tasks.push({ title, isDone: false });
+      input.value = '';
       saveTasks();
       renderTasks();
     }
+  }
 
-    function deleteTask(index) {
-      tasks.splice(index, 1);
-      saveTasks();
-      renderTasks();
-    }
+  function toggleTask(index) {
+    tasks[index].isDone = !tasks[index].isDone;
+    saveTasks();
+    renderTasks();
+  }
 
-    // タイマー機能
-    let timer;
-    let seconds = 0;
+  function deleteTask(index) {
+    tasks.splice(index, 1);
+    saveTasks();
+    renderTasks();
+  }
 
-    function startTimer(sec) {
-      stopTimer();
-      seconds = sec;
-      updateTimerDisplay();
-      timer = setInterval(() => {
+  function formatTime(s) {
+    const m = String(Math.floor(s / 60)).padStart(2, '0');
+    const sec = String(s % 60).padStart(2, '0');
+    return `${m}:${sec}`;
+  }
+
+  function updateTimerDisplay() {
+    document.getElementById('timerDisplay').textContent = formatTime(seconds);
+  }
+
+  function startTimer(sec) {
+    clearInterval(timer);
+    seconds = sec;
+    updateTimerDisplay();
+    timer = setInterval(() => {
+      if (seconds > 0) {
         seconds--;
         updateTimerDisplay();
-        if (seconds <= 0) stopTimer();
-      }, 1000);
-    }
+      } else {
+        clearInterval(timer);
+        alert('タイマーが終了しました！');
+      }
+    }, 1000);
+  }
 
-    function stopTimer() {
-      clearInterval(timer);
-      timer = null;
-    }
+  function stopTimer() {
+    clearInterval(timer);
+  }
 
-    function updateTimerDisplay() {
-      const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-      const secs = String(seconds % 60).padStart(2, '0');
-      document.getElementById('timer').textContent = `${mins}:${secs}`;
-    }
+  // 初期描画
+  renderTasks();
+</script>
 
-    renderTasks();
-  </script>
 </body>
 </html>
+
