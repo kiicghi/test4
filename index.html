@@ -10,6 +10,11 @@
     .done { text-decoration: line-through; color: gray; }
     .timer { font-size: 32px; margin-top: 20px; }
     button { margin-right: 10px; }
+    #taskInput {
+      width: 300px;
+      padding: 8px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -119,10 +124,16 @@
     clearInterval(timer);
   }
 
+  // Enterキーでタスク追加
+  document.getElementById('taskInput').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      addTask();
+    }
+  });
+
   // 初期描画
   renderTasks();
 </script>
 
 </body>
 </html>
-
